@@ -44,8 +44,8 @@ def get_datetime(dataset:Dataset, convert_datetime=True)->np.ndarray :
         print("ValueError: Could not find the TIME variable in the dataset.")
         return None
 
-    
-def get_season(dataset:Dataset) -> List[str]: 
+# Modifier : faire code de int pour chaque saison et retourner np.array of shape(n,) (vector)
+def get_season_from_datetime(dataset:Dataset) -> List[str]: 
     """
     Extracts the season(s) from a dataset based on the datetime of each sample.
 
@@ -62,45 +62,47 @@ def get_season(dataset:Dataset) -> List[str]:
 
     Returns:
     -------
-    List[str]
-        A list of strings representing the season(s) for each sample. 
+    List of len (n) with n the number of samples in dataset
+        A numpy arrayy containing strings representing the season(s) for each sample as values. 
         Possible values are "winter", "spring", "summer", and "fall".
-        The list will have the same length as the number of samples in the 
-        dataset, with each element indicating the season of the corresponding 
-        sample.
+        Seasons are calculated based on north hemisphere seasons.
     """
-
+    
     # Get datetime in '%Y-%m-%d %H:%M:%S' format
     datetime_list = get_datetime(dataset)
 
-    # Sort datetime in increasing order
-    sorted_datetime_objects = sorted(datetime_list)
-    
-    # Get season(s) in which data were recorded
-    data_info = dict()
-    for datetime in sorted_datetime_objects : 
+    # Initialisation 
+    seasons=[]
+
+    for datetime in datetime_list : 
         # Extract month and year from datetime format
         month = datetime.month
-        year=datetime.year
+        season = ""
 
-        # Add year in dict
-        if year not in data_info : 
-            data_info[year] = []
-        
         # Add season in corresponding year of recording
-        if month in [12, 1, 2]: # Winter 
-            if "winter" not in data_info[year] :
-                data_info[year].append("winter")
-        elif month in [3, 4, 5]: # Spring
-            if "spring" not in data_info[year] : 
-                data_info[year].append("spring")
-        elif month in [6, 7, 8]: # Summer
-            if "summer" not in data_info[year] : 
-                data_info[year].append("summer")
-        elif month in [9, 10, 11]: # fall
-            if "fall" not in data_info[year] :
-                data_info[year].append("fall")
+        if month in [6, 7, 8]: # Winter 
+             seasons.append("winter")
+        elif month in [9, 10, 11]: # Spring
+            seasons.append("spring")
+        elif month in [12, 1, 2]: # Summer
+            seasons.append("summer")
+        elif month in [3, 4, 5]: # fall
+            seasons.append("fall")
 
-    return data_info
+    return seasons
+
+    # def get_seasons_and_periods_from_DAY
+
+
+#%% -------------------------------------------- Extract channels 
+def get_channels(dataset:Dataset)->np.ndarray : 
+    try : 
+        channel= dataset.variables["CHANNEL"][:]
+        decoded_channel = np.char.decode(channel, 'utf-8')
+        decoded_channel = [''.join(row).strip() for row in decoded_channel]  
+        return decoded_channel
+    except ValueError:
+        print("ValueError: Could not find the CHANNEL variable in the dataset.")
+        return None 
 
 # %%
