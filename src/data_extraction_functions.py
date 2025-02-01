@@ -11,6 +11,9 @@ import numpy as np
 import datetime
 from typing import List, Dict, Tuple
 import matplotlib.pyplot as plt
+import xarray as xr
+import cartopy.crs as ccrs
+import pandas as pd
 
 #%% ------------------------ Get files from folder / Open or close dataset
 
@@ -24,8 +27,17 @@ def get_list_files(folder_path="../data/IMOS_18_and_38_Hz") -> List[str] :
             list_cdf_files.append(filepath)
 
     return list_cdf_files
+
+def open_dataset_xr(i:int, list_cdf_files:List[str]) -> xr.Dataset : 
+    # Get path to file i
+    cdf_file = list_cdf_files[i]
+
+    # Open file i
+    dataset = xr.open_dataset(cdf_file)
     
-def open_dataset(i:int, list_cdf_files) -> nc.Dataset :
+    return dataset
+
+def open_dataset(i:int, list_cdf_files:List[str]) -> nc.Dataset :
     
     # Get path to file i
     cdf_file = list_cdf_files[i]
@@ -35,7 +47,7 @@ def open_dataset(i:int, list_cdf_files) -> nc.Dataset :
     
     return dataset
 
-def close_dataset(dataset:nc.Dataset)-> None :
+def close_dataset(dataset)-> None :
     dataset.close()
 
 #%% ------------------------ Show dataset
@@ -75,6 +87,8 @@ def plot_echogram(dataset:nc.Dataset, frequency:int)-> None :
     try : 
         channel = frequency # Channel = frequency of sonar
         sv_data = sv[:, :, channel]
+        # put freq in datastring
+        channel_str = get_channels(dataset)[frequency]
     except : 
         print("Frequency not found")
         return 
@@ -84,16 +98,25 @@ def plot_echogram(dataset:nc.Dataset, frequency:int)-> None :
     depth = depth[::-1]
 
     # Get time var
-    time = get_datetime(dataset)
+    time_list = get_datetime(dataset)
+    min_time, max_time = min(time_list).strftime("%Y-%m-%d %H:%M:%S"), max(time_list).strftime("%Y-%m-%d %H:%M:%S")
+
+    # Create x axis with less values to display
+    indices = np.linspace(0, len(time_list) - 1, num=10, dtype=int)  # Afficher 10 labels
+    time_labels = [time_list[i].strftime("%Y-%m-%d %H:%M:%S") for i in indices]
+
+    # Convert datetime into dtr
+    time_list = [dt.strftime("%Y-%m-%d %H:%M:%S") for dt in time_list]
 
     # Plot
-    plt.pcolormesh(time, -depth, 10 * np.log10(sv_data.T), shading='auto', cmap='jet')
+    plt.pcolormesh(time_list, -depth, 10 * np.log10(sv_data.T), shading='auto', cmap='jet')
 
     # Labels and title
     plt.colorbar(label="Sv (dB re 1m⁻¹)")
     plt.xlabel("Time")
+    plt.xticks(indices, time_labels, rotation=90)
     plt.ylabel("Depth (m)")
-    plt.title("Echogram")
+    plt.title(f"Echogram of acoustic data recorded between {min_time} and {max_time} at {channel_str}")
     plt.show()
 
 plt.show()
@@ -266,4 +289,44 @@ def get_channels(dataset:nc.Dataset)->np.ndarray :
         print("ValueError: Could not find the CHANNEL variable in the dataset.")
         return None 
 
-# %%
+# %% -------------------------------------------- Display Trajectories
+def get_enveloppe_convexe_into_xr() : 
+    enveloppe_convexe = "../data/geographic_data/convex_hull.xlsx"
+    df = pd.read_excel(enveloppe_convexe)
+    df = df.rename(columns={'lon': 'LONGITUDE', 'lat': 'LATITUDE'})
+    ds = xr.Dataset.from_dataframe(df)
+    return ds
+
+def display_trajectories(dataset:xr.Dataset, enveloppe=False) -> None : 
+    ## Display trajectories
+    # Extraire les variables de longitude et latitude
+    longitude = dataset['LONGITUDE'].values
+    latitude = dataset['LATITUDE'].values 
+    dates = [min(dataset['TIME'].values), max(dataset['TIME'].values)]
+    dates = [np.datetime_as_string(date_np, unit='D') for date_np in dates]
+   
+    # Create figure
+    plt.figure(figsize=(6, 3))
+    ax = plt.axes(projection=ccrs.PlateCarree())
+
+    # Add coastlines to map
+    ax.coastlines()
+
+    # Add trajectories to map
+    ax.scatter(longitude, latitude, color='red', s=2, transform=ccrs.PlateCarree(), label=f"Trajectoire enregistrées du {dates[0]} au {dates[1]}")
+
+    ## Display enveloppe convexe
+    if enveloppe : 
+        enveloppe = get_enveloppe_convexe_into_xr()
+        ax.scatter(enveloppe['LONGITUDE'].values, enveloppe['LATITUDE'].values, color='green', s=2, transform=ccrs.PlateCarree(), label="Enveloppe convexe")
+
+    # Crop map
+    ax.set_extent([min(longitude)-30, max(longitude)+30, min(latitude)-30, max(latitude)+30], crs=ccrs.PlateCarree())
+
+    # Add legend
+    ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1), ncol=1, fontsize=12)
+
+    # display map
+    plt.show()
+
+
