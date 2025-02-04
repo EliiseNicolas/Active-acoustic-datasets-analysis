@@ -77,7 +77,7 @@ def show_dataset(dataset:nc.Dataset)->None :
 
 #%% ------------------------ Plot echogram
 
-def plot_echogram(dataset:nc.Dataset, frequency:int)-> None : 
+def plot_echogram(dataset:nc.Dataset, frequency:int, path:str)-> None : 
     
     # Create figure
     plt.figure()
@@ -117,6 +117,9 @@ def plot_echogram(dataset:nc.Dataset, frequency:int)-> None :
     plt.xticks(indices, time_labels, rotation=90)
     plt.ylabel("Depth (m)")
     plt.title(f"Echogram of acoustic data recorded between {min_time} and {max_time} at {channel_str}")
+    plt.suptitle(f"For file {path}")
+    plt.savefig(f"./figures/echogram_{min_time}_to_{max_time}_at_{channel_str}.png", dpi=300, bbox_inches="tight")
+
     plt.show()
 
 plt.show()
@@ -256,7 +259,7 @@ def count_season_all_files(list_cdf_files):
 
     return all_season_counts, n_all
 
-def plot_histogram(season_counts:Dict[int,np.ndarray])->None :
+def plot_histogram(season_counts:Dict[int,np.ndarray], save:bool=False, dataset_name:str="")->None :
     
     season_labels = {1: "Winter", 2: "Spring", 3: "Summer", 4: "Fall"}
     period_labels = {1: "Day", 2: "Sunset", 3: "Sunrise", 4: "Night"}
@@ -273,9 +276,11 @@ def plot_histogram(season_counts:Dict[int,np.ndarray])->None :
 
     ax.set_xlabel("Season")
     ax.set_ylabel("Frequency (%)")
-    ax.set_title("Histogram of Periods per Season")
+    ax.set_title(f"Histogram of Periods per Season for {dataset_name}")
     ax.legend(title="Period")
 
+    if save : 
+        plt.savefig(f"./figures/hist_of_periods_per_season_dataset_{dataset_name}.png", dpi=300, bbox_inches="tight")
     plt.show()
 
 #%% -------------------------------------------- Extract channels 
@@ -297,14 +302,16 @@ def get_enveloppe_convexe_into_xr() :
     ds = xr.Dataset.from_dataframe(df)
     return ds
 
-def display_trajectories(dataset:xr.Dataset, enveloppe=False) -> None : 
+def display_trajectories(dataset:xr.Dataset, enveloppe:bool=False, save:bool=False, dataset_name:str="") -> None : 
     ## Display trajectories
     # Extraire les variables de longitude et latitude
     longitude = dataset['LONGITUDE'].values
     latitude = dataset['LATITUDE'].values 
     dates = [min(dataset['TIME'].values), max(dataset['TIME'].values)]
     dates = [np.datetime_as_string(date_np, unit='D') for date_np in dates]
-   
+    channels = "_".join(get_channels(dataset))
+    title=f"Trajectories recorded from {dates[0]} to {dates[1]} at {channels}"
+
     # Create figure
     plt.figure(figsize=(6, 3))
     ax = plt.axes(projection=ccrs.PlateCarree())
@@ -313,7 +320,7 @@ def display_trajectories(dataset:xr.Dataset, enveloppe=False) -> None :
     ax.coastlines()
 
     # Add trajectories to map
-    ax.scatter(longitude, latitude, color='red', s=2, transform=ccrs.PlateCarree(), label=f"Trajectoire enregistrées du {dates[0]} au {dates[1]}")
+    ax.scatter(longitude, latitude, color='red', s=2, transform=ccrs.PlateCarree(), label="Trajectories")
 
     ## Display enveloppe convexe
     if enveloppe : 
@@ -325,6 +332,13 @@ def display_trajectories(dataset:xr.Dataset, enveloppe=False) -> None :
 
     # Add legend
     ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.1), ncol=1, fontsize=12)
+
+    # Add title 
+    plt.title(title)
+
+    # Save fig 
+    if save : 
+        plt.savefig(f"./figures/trajectories_from_{dates[0]}_to{dates[1]}_{channels}_{dataset_name}.png", dpi=300, bbox_inches="tight")
 
     # display map
     plt.show()
