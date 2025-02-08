@@ -14,10 +14,25 @@ import matplotlib.pyplot as plt
 import xarray as xr
 import cartopy.crs as ccrs
 import pandas as pd
+import shutil
 
 #%% ------------------------ Get files from folder / Open or close dataset
 
-def get_list_files(folder_path="../data/IMOS_18_and_38_Hz") -> List[str] : 
+def get_list_files(folder_path="../data/acoustic_data/18_38Hz/IMOS_18_and_38_Hz") -> List[str] : 
+    """
+    Retrieves a list of netCDF (.nc) files from the specified folder.
+
+    Parameters:
+    ----------
+    folder_path : str, optional
+        The path to the folder containing netCDF files (default is "../data/acoustic_data/18_38Hz/IMOS_18_and_38_Hz").
+
+    Returns:
+    -------
+    List[str]
+        A list of file paths to all netCDF files found in the specified folder.
+    """
+
     list_cdf_files = []
 
     # Create list of nc files
@@ -29,6 +44,22 @@ def get_list_files(folder_path="../data/IMOS_18_and_38_Hz") -> List[str] :
     return list_cdf_files
 
 def open_dataset_xr(i:int, list_cdf_files:List[str]) -> xr.Dataset : 
+    """
+    Opens a netCDF file as an xarray Dataset.
+
+    Parameters:
+    ----------
+    i : int
+        Index of the file to open in the list of netCDF file paths.
+    list_cdf_files : List[str]
+        List containing paths to netCDF files.
+
+    Returns:
+    -------
+    xr.Dataset
+        The opened dataset in xarray format.
+    """
+
     # Get path to file i
     cdf_file = list_cdf_files[i]
 
@@ -38,7 +69,22 @@ def open_dataset_xr(i:int, list_cdf_files:List[str]) -> xr.Dataset :
     return dataset
 
 def open_dataset(i:int, list_cdf_files:List[str]) -> nc.Dataset :
-    
+    """
+    Opens a netCDF file as a netCDF4 Dataset.
+
+    Parameters:
+    ----------
+    i : int
+        Index of the file to open in the list of netCDF file paths.
+    list_cdf_files : List[str]
+        List containing paths to netCDF files.
+
+    Returns:
+    -------
+    nc.Dataset
+        The opened dataset in netCDF4 format.
+    """
+
     # Get path to file i
     cdf_file = list_cdf_files[i]
 
@@ -48,11 +94,36 @@ def open_dataset(i:int, list_cdf_files:List[str]) -> nc.Dataset :
     return dataset
 
 def close_dataset(dataset)-> None :
+    """
+    Closes an open netCDF/xarray dataset.
+
+    Parameters:
+    ----------
+    dataset : nc.Dataset or xr.Dataset
+        The dataset to close.
+
+    Returns:
+    -------
+    None
+    """
+
     dataset.close()
 
 #%% ------------------------ Show dataset
 def show_dataset(dataset:nc.Dataset)->None :
+    """
+    Displays basic information about a netCDF dataset, including key variables.
 
+    Parameters:
+    ----------
+    dataset : nc.Dataset
+        The netCDF dataset to display.
+
+    Returns:
+    -------
+    None
+    """
+    
     # Show dataset
     print(dataset)
 
@@ -77,7 +148,25 @@ def show_dataset(dataset:nc.Dataset)->None :
 
 #%% ------------------------ Plot echogram
 
-def plot_echogram(dataset:nc.Dataset, frequency:int, path:str)-> None : 
+def plot_echogram(dataset:nc.Dataset, frequency:int, path:str, save:bool=False)-> None :
+    """
+    Plots an echogram from the provided dataset.
+
+    Parameters:
+    ----------
+    dataset : nc.Dataset
+        The netCDF dataset containing echogram data.
+    frequency : int
+        The channel index corresponding to the frequency to be plotted.
+    path : str
+        Path to the dataset file.
+    save : bool, optional
+        Whether to save the figure (default is False).
+
+    Returns:
+    -------
+    None
+    """
     
     # Create figure
     plt.figure()
@@ -87,6 +176,7 @@ def plot_echogram(dataset:nc.Dataset, frequency:int, path:str)-> None :
     try : 
         channel = frequency # Channel = frequency of sonar
         sv_data = sv[:, :, channel]
+        print(sv_data.shape)
         # put freq in datastring
         channel_str = get_channels(dataset)[frequency]
     except : 
@@ -95,7 +185,7 @@ def plot_echogram(dataset:nc.Dataset, frequency:int, path:str)-> None :
     
     # Get depth var and invert it
     depth = dataset.variables["DEPTH"][:]
-    depth = depth[::-1]
+    # depth = depth[::-1]
 
     # Get time var
     time_list = get_datetime(dataset)
@@ -118,28 +208,29 @@ def plot_echogram(dataset:nc.Dataset, frequency:int, path:str)-> None :
     plt.ylabel("Depth (m)")
     plt.title(f"Echogram of acoustic data recorded between {min_time} and {max_time} at {channel_str}")
     plt.suptitle(f"For file {path}")
-    plt.savefig(f"./figures/echogram_{min_time}_to_{max_time}_at_{channel_str}.png", dpi=300, bbox_inches="tight")
+
+    if save : 
+        plt.savefig(f"./figures/echogram_{min_time}_to_{max_time}_at_{channel_str}.png", dpi=300, bbox_inches="tight")
 
     plt.show()
 
 plt.show()
 
 #%% ------------------------ Extract time(float) and convert into datetime
-def get_datetime(dataset:nc.Dataset, convert_datetime=True)->np.ndarray : 
+def get_datetime(dataset:nc.Dataset)->np.ndarray : 
     """
     Extracts and converts the TIME variable from a netCDF4 Dataset object into 
-    an array of human-readable datetime in datetime format.
+    an array of human-readable datetime objects.
 
     Parameters:
     ----------
     dataset : nc.Dataset
         The netCDF4 Dataset object containing the TIME variable.
-    
+
     Returns:
     -------
-    np.ndarray of shape (n,)
-        An array of datetime objects representing the date and time of each sample, 
-        preserving the original order (dataset['TIME'][0] == datetime[0]).
+    np.ndarray
+        An array of datetime objects.
     """
 
     try :
@@ -162,9 +253,7 @@ def get_seasons_from_datetime(dataset:nc.Dataset) -> List[str]:
     Extracts the season(s) from a dataset based on the datetime of each sample.
 
     This function assumes that the dataset contains a TIME variable which is 
-    converted into a list of datetime objects. It then sorts the datetime 
-    values and determines in which season each sample was recorded, returning
-    a list of corresponding seasons.
+    converted into a list of datetime objects. 
 
     Parameters:
     ----------
@@ -179,6 +268,7 @@ def get_seasons_from_datetime(dataset:nc.Dataset) -> List[str]:
         Possible values are 1, 2, 3, 4 corresponding respectively to "winter", "spring", "summer", and "fall".
         Seasons are calculated based on north hemisphere seasons.
     """
+
     # Get datetime
     datetime_array = get_datetime(dataset)
     
@@ -207,12 +297,16 @@ def count_season(dataset:nc.Dataset)->Dict[int, np.ndarray] :
     """
     Calculate number of occurences of season s, period p in dataset
 
-    parameters : 
-        - dataset : nc.Dataset
-    returns : 
-        season_counts : Dict[int, np.ndarray] 
-            - keys (int) represent seasons : 1-Winter, 2-Spring, 3-Summer, 4-Fall
-            - values (np.ndarray[int] of shape(p,)) represent number of occurence of season s(key) for period p
+    Parameters:
+    ----------
+    dataset : nc.Dataset
+        The netCDF dataset.
+
+    Returns : 
+    ----------
+    season_counts : Dict[int, np.ndarray] 
+        - keys (int) represent seasons : 1-Winter, 2-Spring, 3-Summer, 4-Fall
+        - values (np.ndarray[int] of shape(p,)) represent number of occurence of season s(key) for period p
     """
     #Initialisation
     season_labels = {1: "Winter", 2: "Spring", 3: "Summer", 4: "Fall"}
@@ -232,8 +326,21 @@ def count_season(dataset:nc.Dataset)->Dict[int, np.ndarray] :
 
     return season_counts
 
-def count_season_all_files(list_cdf_files):
-    
+def count_season_all_files(list_cdf_files:List[str]):
+    """
+    Counts and normalizes seasonal occurrences across multiple netCDF files.
+
+    Parameters:
+    ----------
+    list_cdf_files : List[str]
+        List of netCDF file paths.
+
+    Returns:
+    -------
+    Tuple[Dict[int, np.ndarray], int]
+        A dictionary of season counts and the total number of samples.
+    """
+
     season_labels = {1: "Winter", 2: "Spring", 3: "Summer", 4: "Fall"}
     # Initialize dict containing count of periods per seasons
     all_season_counts = {season: np.zeros(4) for season in season_labels} 
@@ -260,7 +367,23 @@ def count_season_all_files(list_cdf_files):
     return all_season_counts, n_all
 
 def plot_histogram(season_counts:Dict[int,np.ndarray], save:bool=False, dataset_name:str="")->None :
-    
+    """
+    Plots a histogram of seasonal occurrences.
+
+    Parameters:
+    ----------
+    season_counts : Dict[int, np.ndarray]
+        Dictionary of season counts.
+    save : bool, optional
+        Whether to save the figure (default is False).
+    dataset_name : str, optional
+        Name of the dataset (default is an empty string).
+
+    Returns:
+    -------
+    None
+    """
+
     season_labels = {1: "Winter", 2: "Spring", 3: "Summer", 4: "Fall"}
     period_labels = {1: "Day", 2: "Sunset", 3: "Sunrise", 4: "Night"}
     
@@ -285,6 +408,20 @@ def plot_histogram(season_counts:Dict[int,np.ndarray], save:bool=False, dataset_
 
 #%% -------------------------------------------- Extract channels 
 def get_channels(dataset:nc.Dataset)->np.ndarray : 
+    """
+    Extracts and decodes the available channels from a dataset.
+
+    Parameters:
+    ----------
+    dataset : nc.Dataset
+        The netCDF dataset.
+
+    Returns:
+    -------
+    np.ndarray
+        Array of channel names.
+    """
+    
     try : 
         channel= dataset.variables["CHANNEL"][:]
         decoded_channel = np.char.decode(channel, 'utf-8')
@@ -296,6 +433,16 @@ def get_channels(dataset:nc.Dataset)->np.ndarray :
 
 # %% -------------------------------------------- Display Trajectories
 def get_enveloppe_convexe_into_xr() : 
+    """
+    Loads and converts a convex hull (enveloppe convexe) geographic dataset 
+    into an xarray dataset.
+
+    Returns:
+    -------
+    xr.Dataset
+        The convex hull dataset.
+    """
+    
     enveloppe_convexe = "../data/geographic_data/convex_hull.xlsx"
     df = pd.read_excel(enveloppe_convexe)
     df = df.rename(columns={'lon': 'LONGITUDE', 'lat': 'LATITUDE'})
@@ -303,6 +450,24 @@ def get_enveloppe_convexe_into_xr() :
     return ds
 
 def display_trajectories(dataset:xr.Dataset, enveloppe:bool=False, save:bool=False, dataset_name:str="") -> None : 
+    """
+    Displays the trajectories recorded in a dataset on a map.
+
+    Parameters:
+    ----------
+    dataset : xr.Dataset
+        The dataset containing the trajectory data.
+    enveloppe : bool, optional
+        Whether to overlay a convex hull (default is False).
+    
+    dataset_name : str, optional
+        Name of the dataset (default is an empty string).
+
+    Returns:
+    -------
+    None
+    """
+
     ## Display trajectories
     # Extraire les variables de longitude et latitude
     longitude = dataset['LONGITUDE'].values
@@ -342,5 +507,234 @@ def display_trajectories(dataset:xr.Dataset, enveloppe:bool=False, save:bool=Fal
 
     # display map
     plt.show()
+    
+def display_all_trajectories_folder(folder_path:str="../data/acoustic_data/18_38Hz/IMOS_18_and_38_Hz", enveloppe:bool=False, save:bool=False) :
+    list_files = get_list_files(folder_path)
+    
+    fig, ax = plt.subplots(figsize=(10, 8), subplot_kw={'projection': ccrs.PlateCarree()})
+    min_longitude, max_longitude, min_latitude, max_latitude = float('inf'),float('-inf'),float('inf'),float('-inf')
+    # Ajouter la carte de base
+    ax.coastlines()
+
+    # Ajouter chaque trajectoire
+    for file_path in list_files:
+        ds = xr.open_dataset(file_path)
+        longitude = ds['LONGITUDE'].values
+        latitude = ds['LATITUDE'].values
+        ax.scatter(longitude, latitude, color='red', s=2, transform=ccrs.PlateCarree(), label="Trajectoire")
+        min_long_file = min(longitude)
+        max_long_file = max(longitude)
+        min_lat_file = min(latitude)
+        max_lat_file = max(latitude)
+        if min_long_file < min_longitude : min_longitude = min_long_file
+        if max_long_file > max_longitude : max_longitude = max_long_file
+        if min_lat_file < min_latitude : min_latitude = min_lat_file
+        if max_lat_file > max_latitude : max_latitude = max_lat_file
+        
+    # Option : Ajouter l'enveloppe convexe
+    if enveloppe:
+        enveloppe = get_enveloppe_convexe_into_xr()  # Fonction à définir
+        ax.scatter(enveloppe['LONGITUDE'].values, enveloppe['LATITUDE'].values, color='green', s=2, transform=ccrs.PlateCarree(), label="Enveloppe Convexe")
+        
+    if save : 
+        plt.savefig(f"./figures/trajectories_all_18_38Hz.png", dpi=300, bbox_inches="tight")
+
+    print(min_latitude, max_latitude, min_longitude, max_longitude)
+    ax.set_extent([min_longitude-10, max_longitude+10, min_latitude-10, max_latitude+10], crs=ccrs.PlateCarree())
+
+    # Ajuster l'affichage
+    plt.tight_layout()
+    plt.show()        
+
+#%% --------------------------------- Count missing data
+def count_missing_data(dataset:nc.Dataset, channels:List[str])->np.ndarray[float]:
+    """
+    Computes the proportion of missing (NaN) depth values for given sonar frequencies in the dataset.
+
+    Parameters:
+    ----------
+    dataset : nc.Dataset
+        The netCDF dataset containing acoustic data.
+    channelss : List[str]
+        List of channels (sonar frequency values, as strings) to analyze.
+
+    Returns:
+    -------
+    np.ndarray[float]
+        A 2D array where each column corresponds to a requested frequency, 
+        and each row represents the proportion of missing data at a given depth.
+        Returns None if requested frequencies are not found in the dataset.
+    """
+ 
+    # Get all acoustic data 
+    sv = dataset.variables['Sv'][:]
+
+    # Get total number of samples in dataset
+    n_samples = sv.shape[0]
+
+    # Get all frequency of interest
+    all_channels_dataset=get_channels(dataset) # All channels present in dataset
+    try : 
+        index_channels=[all_channels_dataset.index(channel) for channel in channels] # dataset of interest
+    except : 
+        print("Dataset doesn't contain data at frequency requested")
+        return
+    
+    # Count number of missing data
+    n_Nan = np.ma.count_masked(sv, axis=0) # number of NaN for every channel of interest for every depths (240,)
+    n_Nan = n_Nan/n_samples # Normalize counts into frequency
+    n_Nan_channels = n_Nan[:, index_channels] # Select only channels of interest
+
+    return n_Nan_channels
+
+def group_data_mean(data: np.ndarray, depth: np.ndarray[float], step: int) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Groups data by computing the mean over depth intervals.
+
+    This function averages the data over depth intervals of size `step`, reducing 
+    the resolution of the data while preserving the overall trend.
+
+    Parameters:
+    ----------
+    data : np.ndarray
+        A 2D array of shape (d, c), where:
+        - d: Number of depth levels,
+        - c: Number of frequency channels or other measured variables.
+
+    depth : np.ndarray[float]
+        A 1D array of shape (d,) containing depth values corresponding to `data`.
+
+    step : int
+        The number of depth levels to average together in each group.
+
+    Returns:
+    -------
+    Tuple[np.ndarray, np.ndarray]
+        - new_data: A 2D array of shape (new_d, c), where new_d = d // step.
+            Contains the averaged data for each depth interval.
+        - new_depth: A 1D array of shape (new_d,) containing the averaged depth values.
+    """
+
+    d, c = data.shape
+    new_d = d//step
+    new_data = np.zeros((new_d, c))
+    new_depth = np.zeros(new_d)
+
+    for i in range(new_d):
+        start = i * step
+        end = start + step
+        new_data[i] = np.mean(data[start:end], axis=0)
+        new_depth[i] = np.mean(depth[start:end])
+
+    return new_data, new_depth
+
+def get_missing_data_all_files(folder_path:str="../data/acoustic_data/18_38Hz/IMOS_18_and_38_Hz", channels:List[str]=['18kHz', '38kHz'], step:int=10)->np.ndarray :
+    # Get every cdf file of the folder
+    list_cdf_files=get_list_files(folder_path=folder_path)
+
+    # Initialize np.ndarray containing missing datas frequency
+    n_files = len(list_cdf_files)
+    n_channels = len(channels)
+    d=240
+    all_missing_datas = np.zeros((d, n_channels))
+
+    # Open every file
+    for i in range(n_files) : 
+        # Load file into nc.Dataset
+        ds = open_dataset(i, list_cdf_files) 
+
+        # Count missing datas for each file
+        all_missing_datas += count_missing_data(ds, channels)
+
+        # Close nc.Dataset
+        close_dataset(ds)
+
+    # Normalize counts to get frequencies
+    all_missing_datas=all_missing_datas/n_files
+
+    return all_missing_datas
+
+def plot_missing_data(missing_data:np.ndarray[float], depths:np.ndarray[float], step:int, channel_indexes:Dict[int,str], title:str="", save:bool=False) -> None:
+    """
+    Plots the percentage of missing acoustic data as a function of depth for specified sonar frequencies.
+
+    Parameters:
+    ----------
+    dataset : nc.Dataset
+        The netCDF dataset containing acoustic data.
+        Shape: (n, d, c), where:
+        - n: Number of samples,
+        - d: Number of depth levels,
+        - c: Number of frequency channels.
+
+    step : 
+    
+    channels : List[str]
+        List of sonar frequencies (as strings) to analyze, e.g., ['18Hz', '38Hz', '70Hz'].
+
+    missing_data : np.ndarray[float]
+        2D array (shape: d × len(channels)) containing the percentage of missing data at each depth.
+
+    save : bool, optional
+        If True, saves the figure as a PNG file (default: False).
+
+    Returns:
+    -------
+    None
+        The function displays the plot but does not return any value.
+    """
+
+    # Create figure
+    plt.figure(figsize=(10, 6))
+
+    # # Get depths, channels
+    # depth = dataset['DEPTH'][:]
+    
+    # Group missing data by depth with step
+    new_missing_data, new_depth =group_data_mean(missing_data, depths, step)
+    
 
 
+    for i, (channel_index, channel_str) in enumerate(channel_indexes.items()) : 
+        bar_width = 20
+        x_offset = i * bar_width
+        plt.bar(new_depth-bar_width/2+x_offset, new_missing_data[:, channel_index], width=bar_width, label=f'Frequency of sonar : {channel_str}')
+
+    # Put label, title, legend
+    plt.xlabel('Depth (m)')
+    plt.ylabel('Missing data (%)')
+    plt.title('Plot of missing data (%) depending on depth (m) and recording frequency (Hz)')
+    plt.legend()
+
+    # Save fig
+    if save : 
+        plt.savefig(f"./figures/plot_missing_data_depending_on_depth_and_recording_frequence_{title}.png", dpi=300, bbox_inches="tight")
+
+    # Show
+    plt.show()
+
+#%% ----------------------------------------- Classify data
+# By season 
+def classify_seasons(folder_path:str="../data/acoustic_data/18_38Hz/IMOS_18_and_38_Hz")-> None:
+    list_cdf_files=get_list_files(folder_path=folder_path)
+    for i, filepath in enumerate(list_cdf_files):
+        ds = nc.Dataset(filepath, mode='r')
+        seasons = get_seasons_from_datetime(ds)
+        all_seasons=np.unique(seasons)
+        parent_folder = os.path.dirname(folder_path)
+        print(parent_folder)
+        for season in all_seasons : 
+            if season == 1 :
+                shutil.copy(filepath, parent_folder+"/winter") 
+            elif season == 2 : 
+                shutil.copy(filepath, parent_folder+"/spring") 
+            elif season == 3 :
+                shutil.copy(filepath, parent_folder+"/summer") 
+            elif season == 4 : 
+                shutil.copy(filepath, parent_folder+"/fall") 
+            else : 
+                print("error, season not managed")
+                return
+        ds.close()
+
+    
