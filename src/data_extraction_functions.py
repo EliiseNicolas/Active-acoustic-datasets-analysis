@@ -15,6 +15,7 @@ import xarray as xr
 import cartopy.crs as ccrs
 import pandas as pd
 import shutil
+from shapely.geometry import Point, Polygon
 
 #%% ------------------------ Get files from folder / Open or close dataset
 
@@ -148,7 +149,7 @@ def show_dataset(dataset:nc.Dataset)->None :
 
 #%% ------------------------ Plot echogram
 
-def plot_echogram(dataset:nc.Dataset, frequency:int, path:str, save:bool=False)-> None :
+def plot_echogram(dataset:nc.Dataset, frequency:int, path:str, save:bool=False, save_path:str="")-> None :
     """
     Plots an echogram from the provided dataset.
 
@@ -210,7 +211,8 @@ def plot_echogram(dataset:nc.Dataset, frequency:int, path:str, save:bool=False)-
     plt.suptitle(f"For file {path}")
 
     if save : 
-        plt.savefig(f"./figures/echogram_{min_time}_to_{max_time}_at_{channel_str}.png", dpi=300, bbox_inches="tight")
+        parent_folder = os.path.dirname(save_path)
+        plt.savefig(parent_folder + f"/figures/echogram_{min_time}_to_{max_time}_at_{channel_str}.png", dpi=300, bbox_inches="tight")
 
     plt.show()
 
@@ -366,7 +368,7 @@ def count_season_all_files(list_cdf_files:List[str]):
 
     return all_season_counts, n_all
 
-def plot_histogram(season_counts:Dict[int,np.ndarray], save:bool=False, dataset_name:str="")->None :
+def plot_histogram(season_counts:Dict[int,np.ndarray], save:bool=False, save_path:str="", dataset_name:str="")->None :
     """
     Plots a histogram of seasonal occurrences.
 
@@ -403,7 +405,9 @@ def plot_histogram(season_counts:Dict[int,np.ndarray], save:bool=False, dataset_
     ax.legend(title="Period")
 
     if save : 
-        plt.savefig(f"./figures/hist_of_periods_per_season_dataset_{dataset_name}.png", dpi=300, bbox_inches="tight")
+        parent_folder = os.path.dirname(save_path)
+        plt.savefig(parent_folder + f"/figures/hist_of_periods_per_season_dataset_{dataset_name}.png", dpi=300, bbox_inches="tight")
+    
     plt.show()
 
 #%% -------------------------------------------- Extract channels 
@@ -448,6 +452,25 @@ def get_enveloppe_convexe_into_xr() :
     df = df.rename(columns={'lon': 'LONGITUDE', 'lat': 'LATITUDE'})
     ds = xr.Dataset.from_dataframe(df)
     return ds
+
+def get_enveloppe_convexe_into_list_tuple()-> List[Tuple[float]] : 
+    """
+    Loads and converts a convex hull (enveloppe convexe) geographic dataset 
+    into a list of Tuple (points).
+
+    Returns:
+    -------
+    List[Tuple[float]]
+        The convex hull dataset.
+    """
+    
+    enveloppe_convexe = "../data/geographic_data/convex_hull.xlsx"
+    df = pd.read_excel(enveloppe_convexe)
+    l = []
+    for lon, lat in zip(df["lon"], df["lat"]):
+        point = (lon, lat)
+        l.append(point)
+    return l
 
 def display_trajectories(dataset:xr.Dataset, enveloppe:bool=False, save:bool=False, dataset_name:str="") -> None : 
     """
@@ -537,7 +560,8 @@ def display_all_trajectories_folder(folder_path:str="../data/acoustic_data/18_38
         ax.scatter(enveloppe['LONGITUDE'].values, enveloppe['LATITUDE'].values, color='green', s=2, transform=ccrs.PlateCarree(), label="Enveloppe Convexe")
         
     if save : 
-        plt.savefig(f"./figures/trajectories_all_18_38Hz.png", dpi=300, bbox_inches="tight")
+        parent_folder = os.path.dirname(folder_path)
+        plt.savefig(parent_folder + f"/figures/trajectories_all_18_38Hz.png", dpi=300, bbox_inches="tight")
 
     print(min_latitude, max_latitude, min_longitude, max_longitude)
     ax.set_extent([min_longitude-10, max_longitude+10, min_latitude-10, max_latitude+10], crs=ccrs.PlateCarree())
@@ -654,7 +678,7 @@ def get_missing_data_all_files(folder_path:str="../data/acoustic_data/18_38Hz/IM
 
     return all_missing_datas
 
-def plot_missing_data(missing_data:np.ndarray[float], depths:np.ndarray[float], step:int, channel_indexes:Dict[int,str], title:str="", save:bool=False) -> None:
+def plot_missing_data(missing_data:np.ndarray[float], depths:np.ndarray[float], step:int, channel_indexes:Dict[int,str], title:str="", save:bool=False, save_path:str="") -> None:
     """
     Plots the percentage of missing acoustic data as a function of depth for specified sonar frequencies.
 
@@ -708,7 +732,8 @@ def plot_missing_data(missing_data:np.ndarray[float], depths:np.ndarray[float], 
 
     # Save fig
     if save : 
-        plt.savefig(f"./figures/plot_missing_data_depending_on_depth_and_recording_frequence_{title}.png", dpi=300, bbox_inches="tight")
+        parent_folder = os.path.dirname(save_path)
+        plt.savefig(parent_folder + f"/figures/plot_missing_data_depending_on_depth_and_recording_frequence_{title}.png", dpi=300, bbox_inches="tight")
 
     # Show
     plt.show()
@@ -736,5 +761,28 @@ def classify_seasons(folder_path:str="../data/acoustic_data/18_38Hz/IMOS_18_and_
                 print("error, season not managed")
                 return
         ds.close()
+
+# By localisation
+def are_points_in_polygon(longitude:np.ndarray[float], latitude:np.ndarray[float], polygon:Polygon)-> bool:
+    """
+    Check if each point (longitude, latitude) is inside the given polygon.
+
+    Parameters:
+    ----------
+    longitude : np.ndarray[float]
+        Array containing the longitudes of the points.
+    latitude : np.ndarray[float]
+        Array containing the latitudes of the points.
+    polygon : Polygon
+        A Shapely polygon representing the area to check.
+
+    Returns:
+    -------
+    np.ndarray[bool]
+        Boolean array indicating whether each point is inside the polygon (`True`) or not (`False`).
+    """
+    points = [Point(lon, lat) for lon, lat in zip(longitude, latitude)]
+    return np.array([polygon.contains(point) for point in points])
+    
 
     
