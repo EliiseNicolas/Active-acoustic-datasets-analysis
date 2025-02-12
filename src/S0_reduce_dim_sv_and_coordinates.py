@@ -2,6 +2,7 @@ import os
 import xarray as xr
 import pickle
 import sys
+from basic_functions import get_datetime_from_xr, get_seasons_from_datetime
 
 # Get args
 src_path = sys.argv[1]
@@ -33,11 +34,13 @@ for i, file in enumerate(list_files) :
     data_file = {}
 
     # Keep coordinates (time, depth, longitude, latitude, channels)
-    if i==0 : # Keep only one copy of depth array cause it is the same for every file
-        data_file["DEPTH"] = ds.coords["DEPTH"].values
-    data_file["TIME"] = ds.coords["TIME"].values
+    data_file["DEPTH"] = ds.coords["DEPTH"].values
+    time = get_datetime_from_xr(ds) # convert into datetime
+    data_file["TIME"] = time
+    data_file["SEASON"] = get_seasons_from_datetime(time) # convert datetime into season
     data_file["LONGITUDE"] = ds["LONGITUDE"].values
     data_file["LATITUDE"] = ds["LATITUDE"].values
+    
     try : 
         # Not every dataset has the channel data in its attributes, sometimes it is in its coords
         channel = [ds.attrs["channel"]]

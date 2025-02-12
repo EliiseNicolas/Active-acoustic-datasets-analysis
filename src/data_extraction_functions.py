@@ -247,7 +247,7 @@ def get_datetime(dataset:nc.Dataset)->np.ndarray :
     
     # Convert into datetime objects
     date_var = np.array([datetime.datetime(date.year, date.month, date.day, date.hour, date.minute, date.second) for date in date_var]) 
-    
+        
     return date_var
     
 def get_seasons_from_datetime(dataset:nc.Dataset) -> List[str]: 
@@ -268,7 +268,7 @@ def get_seasons_from_datetime(dataset:nc.Dataset) -> List[str]:
     np.ndarray of shape(n,) with n the number of samples in dataset
         A numpy arrayy containing strings representing the season(s) for each sample as values. 
         Possible values are 1, 2, 3, 4 corresponding respectively to "winter", "spring", "summer", and "fall".
-        Seasons are calculated based on north hemisphere seasons.
+        Seasons are calculated based on SOUTH hemisphere seasons.
     """
 
     # Get datetime
