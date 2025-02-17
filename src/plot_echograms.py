@@ -88,11 +88,18 @@ with open(pkl_path, 'rb') as pkl_file:
                     src_basename = os.path.basename(pkl_path)
                     src_filename = os.path.splitext(src_basename)[0]
                     fig_path = dest_path + src_filename + "_"+str(date)
+                    i=0
+                    # change filename if already in path
+                    while os.path.exists(fig_path):
+                        fig_path = fig_path+"_"+str((i))
+                        i+=1
+
                     print(fig_path)
                     plt.savefig(f"{fig_path}.png", dpi=300, bbox_inches="tight")
 
                 # Show echogram
-                plt.show()
+                # plt.show()
+                plt.clf()
 
             # End of file
             except EOFError :
