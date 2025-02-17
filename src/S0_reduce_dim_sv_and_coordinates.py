@@ -4,6 +4,50 @@ import pickle
 import sys
 from basic_functions import get_datetime_from_xr, get_seasons_from_datetime
 
+"""
+Script for extracting and saving data from NetCDF (.nc) files into a pickle (.pkl) file.
+
+This script reads NetCDF files from a specified directory, extracts relevant data including time, depth, 
+longitude, latitude, season, and the chosen variable (default: "Sv"). It then organizes and saves this data into a pickle file 
+for further processing. The pickle file is created in the specified destination path, and any existing file with the same name is 
+overwritten.
+
+Usage:
+------
+Run from the terminal with the following command:
+
+    python script.py <source_folder> <destination_folder> <pickle_file_name> [variable_name]
+
+Arguments:
+----------
+- source_folder (str) : Path to the folder containing NetCDF (.nc) files to be processed.
+- destination_folder (str) : Path to the folder where the resulting pickle file will be saved.
+- pickle_file_name (str) : Name of the output pickle file (without the ".pkl" extension).
+- variable_name (str, optional) : The variable to extract from the NetCDF files. Default is "Sv".
+
+Outputs:
+--------
+- A pickle file containing a dictionary for each NetCDF file processed. Each dictionary contains:
+    - "TIME" : List of datetime objects corresponding to the time in the NetCDF file.
+    - "DEPTH" : Depth values.
+    - "SEASON" : Season corresponding to each time.
+    - "LONGITUDE" : Longitude values.
+    - "LATITUDE" : Latitude values.
+    - "CHANNEL" : Channel information.
+    - The selected variable (default "Sv") data as a NumPy array.
+    - "DAY" : Day values from the NetCDF file.
+    - "TITLE" : Title of the dataset.
+
+Example:
+--------
+To process NetCDF files and save the results in a pickle file:
+    python script.py /path/to/nc_files /path/to/save /output_pickle_name
+
+To specify a variable (e.g., "Temperature"):
+    python script.py /path/to/nc_files /path/to/save /output_pickle_name Temperature
+"""
+
+
 # Get args
 src_path = sys.argv[1]
 dest_path = sys.argv[2]

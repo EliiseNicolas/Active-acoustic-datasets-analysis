@@ -3,6 +3,35 @@ import pickle
 import sys
 import numpy as np
 
+"""
+Script for splitting and saving data from a pickle (.pkl) file into separate period-wise files.
+
+This script reads data from a source pickle file, organizes it by day, and saves the data for each day into four distinct pickle files: one for each of the following: day, sunset, sunrise, and night. If the pickle files already exist, they are deleted before being recreated with the split data.
+
+Usage:
+------
+Run from the terminal with the following command:
+
+    python script.py <source_pkl_file>
+
+Arguments:
+----------
+- source_pkl_file (str) : Path to the source .pkl file containing the original data. The script will split the data by periods and create new files based on this source.
+
+Outputs:
+--------
+- Four pickle files: one for each of the following categories:
+    - <source_filename>_day.pkl
+    - <source_filename>_sunset.pkl
+    - <source_filename>_sunrise.pkl
+    - <source_filename>_night.pkl
+
+Example:
+--------
+To split data from a source pickle file:
+    python script.py /path/to/source_file.pkl
+"""
+
 # Get args
 s1_src_path = sys.argv[1]
 

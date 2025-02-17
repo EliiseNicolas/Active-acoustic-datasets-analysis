@@ -4,6 +4,39 @@ import os
 import sys
 from basic_functions import *
 
+"""
+Script for splitting and saving data from a pickle (.pkl) file into separate season-wise files.
+
+This script reads data from a source pickle file, organizes it by season, and saves the data for each season 
+into four distinct pickle files: one for each season (winter, spring, summer, and fall). 
+If the pickle files already exist, they are deleted before being recreated with the split data.
+
+Usage:
+------
+Run from the terminal with the following command:
+
+    python script.py <source_pkl_file>
+
+Arguments:
+----------
+- source_pkl_file (str) : Path to the source .pkl file containing the original data. 
+The script will split the data by seasons and create new files based on this source.
+
+Outputs:
+--------
+- Four pickle files: one for each of the following seasons:
+    - <source_filename>_winter.pkl
+    - <source_filename>_spring.pkl
+    - <source_filename>_summer.pkl
+    - <source_filename>_fall.pkl
+
+Example:
+--------
+To split data from a source pickle file by season:
+    python script.py /path/to/source_file.pkl
+"""
+
+
 # Get args
 s0_src_path = sys.argv[1]
 
@@ -64,5 +97,5 @@ with open(s0_src_path, 'rb') as p_file:
                         pickle.dump((data_title, dict_season), p_file_season)
 
         except EOFError:
-            print("Fin du fichier atteinte.")
+            print("End of file")
             break
