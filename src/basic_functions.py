@@ -129,6 +129,26 @@ def get_enveloppe_convexe_into_xr(path:str="../data/geographic_data/convex_hull.
     ds = xr.Dataset.from_dataframe(df)
     return ds
 
+def get_enveloppe_convexe_into_list_tuple()-> List[Tuple[float]] : 
+    """
+    Loads and converts a convex hull (enveloppe convexe) geographic dataset 
+    into a list of Tuple (points).
+
+    Returns:
+    -------
+    List[Tuple[float]]
+        The convex hull dataset.
+    """
+    
+    enveloppe_convexe = "../data/geographic_data/convex_hull.xlsx"
+    df = pd.read_excel(enveloppe_convexe)
+    l = []
+    for lon, lat in zip(df["lon"], df["lat"]):
+        point = (lon, lat)
+        l.append(point)
+    return l
+    
+
 #%% -------------------- Display trajectories 
 def display_all_trajectories_folder(pkl_path:str, save:bool=False, dest_path:str="") :
     plt.clf()
@@ -257,3 +277,30 @@ def display_all_trajectories_folder(pkl_path:str, save:bool=False, dest_path:str
 #             except EOFError:
 #                 print("End of file.")
 #                 break
+
+
+
+def are_points_in_polygon(longitude:np.ndarray[float], latitude:np.ndarray[float])-> np.ndarray[bool]:
+    """
+    Check if each point (longitude, latitude) is inside the given polygon.
+
+    Parameters:
+    ----------
+    longitude : np.ndarray[float]
+        Array containing the longitudes of the points.
+    latitude : np.ndarray[float]
+        Array containing the latitudes of the points.
+
+
+    Returns:
+    -------
+    np.ndarray[bool]
+        Boolean array indicating whether each point is inside the polygon (`True`) or not (`False`).
+    """
+
+    polygon = Polygon(get_enveloppe_convexe_into_list_tuple()) # The ROI
+    points = [Point(lon, lat) for lon, lat in zip(longitude, latitude)]
+    
+    return np.array([polygon.contains(point) for point in points])
+
+
