@@ -87,7 +87,7 @@ def get_sample_rate_cropped_files(file_path:str) :
         # read data in pkl as stream
         while True : 
             try:
-                date, date_dict = pickle.load(p_file)
+                date, date_dict = pkl.load(p_file)
                 print(date)
                 mean_sample_rate = 0
 
@@ -140,7 +140,7 @@ def get_enveloppe_convexe_into_list_tuple()-> List[Tuple[float]] :
         The convex hull dataset.
     """
     
-    enveloppe_convexe = "../data/geographic_data/convex_hull.xlsx"
+    enveloppe_convexe = "../../data/geographic_data/convex_hull.xlsx"
     df = pd.read_excel(enveloppe_convexe)
     l = []
     for lon, lat in zip(df["lon"], df["lat"]):
@@ -371,5 +371,6 @@ def boxplot_mean_std(depth: np.ndarray, inROI: Tuple[np.ndarray], outROI: Tuple[
         plt.savefig(f"{fig_path}.png", dpi=300, bbox_inches="tight")
 
     plt.show()
+
 
 

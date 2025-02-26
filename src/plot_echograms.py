@@ -43,6 +43,8 @@ pkl_path = sys.argv[1]   # src path
 if len(sys.argv) > 2 :
     save = sys.argv[2].lower() == "true" # Convert string to boolean
     dest_path = sys.argv[3]
+    if not dest_path.endswith("/"):
+        dest_path += "/"
 else : 
     save = False
     dest_path=""
@@ -66,12 +68,12 @@ with open(pkl_path, 'rb') as pkl_file:
                 time = data_dict["TIME"]
 
                 # Convert time as str
-                time_str = np.array([dt.strftime("%H:%M:%S") for dt in time])
+                time_str = np.array([dt.strftime("%Y : %m:%d %H:%M") for dt in time])
 
                 # Select only 10 times to put as xlabels in plot
                 tick_indices = np.linspace(0, len(time) - 1, num=10, dtype=int)
                 tick_labels = time_str[tick_indices]
-                time_indices = np.array([i.strftime("%H:%M:%S") for i in time[tick_indices]])
+                time_indices = np.array([i.strftime("%Y : %m:%d %H:%M") for i in time[tick_indices]])
 
                 # Plot
                 plt.pcolormesh(time_str, -depth, 10 * np.log10(Sv.T), shading='auto', cmap='jet')
