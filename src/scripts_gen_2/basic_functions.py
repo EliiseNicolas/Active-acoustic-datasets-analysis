@@ -112,7 +112,7 @@ def get_sample_rate_cropped_files(file_path:str) :
         return sample_rates, np.mean(sample_rates), np.std(sample_rates)
 
 #%%--------------------------
-def get_enveloppe_convexe_into_xr(path:str="../data/geographic_data/convex_hull.xlsx") : 
+def get_enveloppe_convexe_into_xr(path:str="/home/elise/Documents/M1-BIM/S2/active_acoutics_analysis_sea_elephants/data/geographic_data/convex_hull.xlsx") : 
     """
     Loads and converts a convex hull (enveloppe convexe) geographic dataset 
     into an xarray dataset.
@@ -140,7 +140,7 @@ def get_enveloppe_convexe_into_list_tuple()-> List[Tuple[float]] :
         The convex hull dataset.
     """
     
-    enveloppe_convexe = "../../data/geographic_data/convex_hull.xlsx"
+    enveloppe_convexe = "/home/elise/Documents/M1-BIM/S2/active_acoutics_analysis_sea_elephants/data/geographic_data/convex_hull.xlsx"
     df = pd.read_excel(enveloppe_convexe)
     l = []
     for lon, lat in zip(df["lon"], df["lat"]):
@@ -151,6 +151,7 @@ def get_enveloppe_convexe_into_list_tuple()-> List[Tuple[float]] :
 
 #%% -------------------- Display trajectories 
 def display_all_trajectories_folder(pkl_path:str, save:bool=False, dest_path:str="") :
+    print("hey")
     plt.clf()
     # Create whole fig in which we will put every trajectories
     fig, ax = plt.subplots(figsize=(10, 8), subplot_kw={'projection': ccrs.PlateCarree()})
@@ -168,8 +169,8 @@ def display_all_trajectories_folder(pkl_path:str, save:bool=False, dest_path:str
     ax.scatter(enveloppe['LONGITUDE'].values, enveloppe['LATITUDE'].values, color='green', s=2, transform=ccrs.PlateCarree(), label="Convex hull")
                     
     # Add Australia points 
-    enveloppe = get_enveloppe_convexe_into_xr("../data/geographic_data/australia_hull.xlsx") 
-    ax.scatter(enveloppe['LONGITUDE'].values, enveloppe['LATITUDE'].values, color='green', s=2, transform=ccrs.PlateCarree(), label="Convex hull")
+    # enveloppe = get_enveloppe_convexe_into_xr("../data/geographic_data/australia_hull.xlsx") 
+    # ax.scatter(enveloppe['LONGITUDE'].values, enveloppe['LATITUDE'].values, color='green', s=2, transform=ccrs.PlateCarree(), label="Convex hull")
          
     # Initiate min/max longitude/latitude values 
     min_longitude, max_longitude, min_latitude, max_latitude = float('inf'),float('-inf'),float('inf'),float('-inf')
@@ -187,14 +188,14 @@ def display_all_trajectories_folder(pkl_path:str, save:bool=False, dest_path:str
                 ax.scatter(longitude, latitude, s=2, transform=ccrs.PlateCarree())
 
                 # Get min/max longitude/latitude
-                min_long_file, max_long_file = min(longitude), max(longitude)
-                min_lat_file, max_lat_file = min(latitude), max(latitude)
+                # min_long_file, max_long_file = min(longitude), max(longitude)
+                # min_lat_file, max_lat_file = min(latitude), max(latitude)
                 
-                # Update min/max longitude/latitude if necessary
-                if min_long_file < min_longitude : min_longitude = min_long_file
-                if max_long_file > max_longitude : max_longitude = max_long_file
-                if min_lat_file < min_latitude : min_latitude = min_lat_file
-                if max_lat_file > max_latitude : max_latitude = max_lat_file
+                # # Update min/max longitude/latitude if necessary
+                # if min_long_file < min_longitude : min_longitude = min_long_file
+                # if max_long_file > max_longitude : max_longitude = max_long_file
+                # if min_lat_file < min_latitude : min_latitude = min_lat_file
+                # if max_lat_file > max_latitude : max_latitude = max_lat_file
 
             # End of file
             except EOFError : 
@@ -205,7 +206,7 @@ def display_all_trajectories_folder(pkl_path:str, save:bool=False, dest_path:str
                     plt.savefig(dest_path + "trajectories_" + src_filename + ".png", dpi=300, bbox_inches="tight")
 
                 # Display figure
-                ax.set_extent([min_longitude, max_longitude, min_latitude, max_latitude], crs=ccrs.PlateCarree())
+                # ax.set_extent([min_longitude, max_longitude, min_latitude, max_latitude], crs=ccrs.PlateCarree())
                 plt.tight_layout()
                 # plt.legend()
                 plt.show()

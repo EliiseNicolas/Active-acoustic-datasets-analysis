@@ -40,7 +40,7 @@ def filter_by_date(src_path, dest_path):
                     
                     if h_next > h + 4:  # Detecting time gap of at least 4 hours
                         index_thr = i + 1
-                        dict_by_date = {"DEPTH": data_dict["DEPTH"], "in_ROI": data_dict["in_ROI"]}
+                        dict_by_date = {"DEPTH": data_dict["DEPTH"]}
                         
                         for key, array in data_dict.items():
                             if key not in ["DEPTH", "in_ROI"]:
